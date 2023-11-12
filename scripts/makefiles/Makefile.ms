@@ -47,8 +47,8 @@ ifndef TOP
 TOP = top
 endif
 
-export BUILD_PATH=$(PROJ)/work/run/$(COMP_DIR)
-export SIM_PATH=$(PROJ)/work/run/$(SIM_DIR)
+export BUILD_PATH=$(PWD)/$(COMP_DIR)
+export SIM_PATH=$(PWD)/$(SIM_DIR)
 ######################################
 # Targets
 ######################################
