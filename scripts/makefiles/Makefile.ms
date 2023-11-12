@@ -21,6 +21,9 @@ ifdef DUT_FILE_LIST
 F_LIST_DUT = -f $(DUT_FILE_LIST)
 endif
 
+ifndef TIMESCALE
+TIMESCALE = -timescale 1ns/1ps
+endif
 
 ifeq ($(GUI), 1)
 	RUNC = 
@@ -80,7 +83,8 @@ comp: $(COMP_DIR)
 	cd $(COMP_DIR); \
 	$(VLOG) -work $(LIB_NAME) \
 			-sv \
-			$(F_LIST_DUT)
+			$(F_LIST_DUT) \
+			$(TIMESCALE)
 
 run: $(SIM_DIR)
 	cd $(SIM_DIR); \
