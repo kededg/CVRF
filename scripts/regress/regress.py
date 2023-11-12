@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+
 from subprocess import Popen, PIPE
 import threading
 import os
@@ -191,7 +192,7 @@ def main():
     # else: TODO: Run single test like <list>.test "mini.uart_test"
     #     start_singl_test()
 
-    # TODO: Log file parsing
+    # TODO: Log file parsing  and create summury table
     print("Regression complete")
 
 if __name__ == "__main__":

@@ -86,7 +86,8 @@ run: $(SIM_DIR)
 	cd $(SIM_DIR); \
 	$(VSIM) $(RUNC) \
 		$(BUILD_PATH)/$(LIB_NAME).$(TOP) \
-		$(RUN_OPTS)
+		$(RUN_OPTS) \
+		-sv_seed $(SEED)
 		
 clean:
 	@if [ -d $(COMP_DIR) ]; then \
