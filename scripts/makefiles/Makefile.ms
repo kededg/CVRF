@@ -22,7 +22,7 @@ F_LIST_DUT = -f $(DUT_FILE_LIST)
 endif
 
 ifndef TIMESCALE
-TIMESCALE = -timescale 1ns/1ps
+TIMESCALE = 1ns/1ps
 endif
 
 ifeq ($(GUI), 1)
@@ -84,7 +84,7 @@ comp: $(COMP_DIR)
 	$(VLOG) -work $(LIB_NAME) \
 			-sv \
 			$(F_LIST_DUT) \
-			$(TIMESCALE)
+			-timescale $(TIMESCALE)
 
 run: $(SIM_DIR)
 	cd $(SIM_DIR); \
