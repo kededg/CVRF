@@ -1,10 +1,11 @@
 
 export PROJ=$(PWD)/../..
+export CVRF=$(PROJ)/cvrf
 
 DUT_FILE_LIST = $(PROJ)/src/filelist.f
 
 ifndef VERILATOR
-	include $(PROJ)/work/common/Makefile.ms
+	include $(CVRF)/scripts/makefiles/Makefile.ms
 else
-	include $(PROJ)/work/common/Makefile.vrlt
+	include $(CVRF)/scripts/makefiles/Makefile.vrlt
 endif
