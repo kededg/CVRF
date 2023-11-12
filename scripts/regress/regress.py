@@ -103,8 +103,7 @@ def create_run_line():
 
 # Compile tests command to terminal
 def compile():
-    os.system('source ./sourceme')
-    os.system('make all')
+    os.system('make comp')
 
 # Run test command to terminal
 def run_test(cmd_line):
