@@ -34,6 +34,10 @@ job_num = 1
  
 no_comp = 0
 
+# Print fields
+job_name_tabs = 1
+test_summ = {}
+
 # ------------------------
 # Args
 # ------------------------
@@ -106,39 +110,120 @@ def create_run_line():
 def compile():
     os.system('make comp')
 
+def get_tab_num(line):
+    line_len = len(line)
+    return int(line_len / 4)
+
+def print_preparation():
+    global job_name_tabs
+    global test_summ
+    for test in tests_list:
+        tab_num = get_tab_num(f'{tl_name}.{test["name"]}')
+        if tab_num > job_name_tabs:
+            job_name_tabs = tab_num
+    test_summ["test_num"] = 0
+    test_summ["pass_num"] = 0
+    test_summ["fail_num"] = 0
+    test_summ["fatal_num"] = 0
+    test_summ["unknown_num"] = 0
+
+def print_summ_hendl():
+    print_preparation()
+    job_name = f'Job name'
+    tabs = '\t' * (job_name_tabs-get_tab_num(job_name)+2)
+    hendler = "_____________________________________  REGRESS SUMMARY  _____________________________________\n"
+    hendler += f"\tJob name{tabs}| Seed\t\t| CPU time(s)\t| Sim time(s)\t|\tStatus\n"
+    hendler += "‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾"
+    with open('regress.log', 'w') as f:
+        f.write(f'{hendler}\n')
+    print(hendler)
+
+def log_parsing(log):
+    seed = None
+    status = None
+    cpu_time = None
+    sim_time = None
+
+    if "vsim " in log:
+        log =  log.split("\n")
+        for lin in log:
+            match = re.match(r'^.*(-sv_seed)\s(?P<seed>\d*)\s?',lin)
+            if match:
+                seed = match.group('seed')
+                # print(f'SEED: {seed}')
+            match = re.match(r'^.*(Test:)\s(?P<status>\w*)\s?',lin)
+            if match:
+                status = match.group('status')
+                # print(f'Status: {status}')
+            match = re.match(r'^\#\s*(total: cpu time)\s+(?P<cpu_time>.*)\s{1}(\w+)',lin)
+            if match:
+                cpu_time = match.group('cpu_time')
+                # print(f'CPU Time: {cpu_time}')
+            match = re.match(r'^\#\s*(total: wall time)\s+(?P<sim_time>.*)\s{1}(\w+)',lin)
+            if match:
+                sim_time = match.group('sim_time')
+                # print(f'SIM Time: {sim_time}')
+    else:
+        print("Parsing Error! Unknown simulator")
+
+    return seed, cpu_time, sim_time, status
+
+def print_summury(test):
+    job_name = f'{tl_name}.{test["name"]}'
+    tabs = '\t' * (job_name_tabs-get_tab_num(job_name)+2)
+    seed, cpu_time, sim_time, status = log_parsing(test["log"])
+    out_line = f'\t{tl_name}.{test["name"]}{tabs}| {seed}\t|\t{cpu_time}\t\t|\t{sim_time}\t\t|\t{status}'
+    with open('regress.log', 'a') as f:
+        f.write(f'{out_line}\n')
+    print(f'{out_line}')
+    test_summ["test_num"] += 1
+    if status == "PASS":
+        test_summ["pass_num"] += 1
+    elif status == "FAIL":
+        test_summ["fail_num"] += 1
+    elif status == "FATAL":
+        test_summ["fatal_num"] += 1
+    elif status == "UNKNOWN":
+        test_summ["unknown_num"] += 1
+
+def print_end():
+    global test_summ
+    end = f'_____________________________________________________________________________________________\n'
+    end += f'\tTotal test: {test_summ["test_num"]}\t\tPass: {test_summ["pass_num"]}\t\tFail: {test_summ["fail_num"]}\t\tFatal: {test_summ["fatal_num"]}\t\tUnknown: {test_summ["unknown_num"]}\n'
+    end += f'‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾'
+    with open('regress.log', 'a') as f:
+        f.write(f'{end}\n')
+    print(end)
+
 # Run test command to terminal
-def run_test(cmd_line):
+def run_test(test):
     semaphore.acquire()
     process = Popen(['bash'], stdin=PIPE, stderr=PIPE, stdout=PIPE)
     try:
-        output, error = process.communicate(cmd_line.encode())
+        output, error = process.communicate(test["cmd"].encode())
         if error:
             print(error.decode())
-        else:
-            print(output.decode())
         semaphore.release()
         
-        # process.stdin.write(b'source ./sourceme\n')
-        # process.stdin.write(cmd_line.encode())
-        # process.stdin.flush()
-        # process.stdin.close()
-        # print(process.stdout.read().decode())
-        # process.stdout.close()
-        # process.wait()
     finally:
         semaphore.release()
+        test["log"] = output.decode()
+        print_summury(test)
     process.terminate()
+    
 
 def start_regression():
+    print_summ_hendl()
     global semaphore 
     semaphore = threading.Semaphore(job_num)
     treads = []
     for test in tests_list:
-        tread = threading.Thread(target=run_test, args=(test['cmd'],))
+        tread = threading.Thread(target=run_test, args=(test,))
         treads.append(tread)
         tread.start()
     for tread in treads:
         tread.join()
+    print_end()
 
 def pars_args():
     # ------------------------

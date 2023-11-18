@@ -28,7 +28,7 @@ endif
 ifeq ($(GUI), 1)
 	RUNC = 
 else
-	RUNC = -c -onfinish exit -do "run -all; quit"
+	RUNC = -c -onfinish exit -do "run -all; simstats; quit"
 endif
 
 ######################################
@@ -84,15 +84,17 @@ comp: $(COMP_DIR)
 	$(VLOG) -work $(LIB_NAME) \
 			-sv \
 			$(F_LIST_DUT) \
-			-timescale $(TIMESCALE)
+			-timescale $(TIMESCALE) \
+			-l comp.log 
 
 run: $(SIM_DIR)
 	cd $(SIM_DIR); \
 	$(VSIM) $(RUNC) \
 		$(BUILD_PATH)/$(LIB_NAME).$(TOP) \
 		$(RUN_OPTS) \
-		-sv_seed $(SEED)
-		
+		-sv_seed $(SEED) \
+		-voptargs=+acc \
+		-l sim.log
 clean:
 	@if [ -d $(COMP_DIR) ]; then \
 		rm -rf $(COMP_DIR); \
